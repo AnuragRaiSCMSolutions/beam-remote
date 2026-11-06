@@ -62,6 +62,14 @@ See `VALIDATION.md` for the checks actually completed for this delivery. Physica
 - Test with previously enabled timers/special modes: timer flags remain off; the new sleep/swing/Turbo flags reflect desired settings. No claim is made that these advanced settings are preserved.
 - Regression: existing LG controls retain explicit Off and On/Apply behavior, and existing TV/raw profiles remain usable.
 
+## Voltas 183V DZU2 protocol candidate
+
+- Confirm the full AC/remote model before treating this as a match. R32 alone does not identify the remote protocol.
+- In Preview, check Cool/Dry/Fan/Heat, 17–30°C, Auto/Low/Medium/High, explicit On/Off, Swing, Sleep, Eco, Turbo toggle and Display toggle. Dry forces Auto fan; temperature controls are disabled in Fan-only mode.
+- On a compatible physical unit, point the phone at the receiver and test one command at a time from short range. Confirm power, a temperature change, mode and fan response separately. The app receives no appliance acknowledgement.
+- Verify that Turbo and Display toggle buttons are not repeated accidentally; these protocol commands toggle the appliance feature state.
+- The public protocol report names 183V DZU2 as tested by its author. That report does not certify the user's R32 model or phone transmitter.
+
 ## v1.2.0 remote acceptance checks
 
 - Tap TEMP + once: exactly one degree change and one send/preview. Tap TEMP − once to reverse. Boundary buttons are disabled. No long-press repeats.

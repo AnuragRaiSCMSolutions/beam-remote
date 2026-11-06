@@ -2,7 +2,7 @@
 
 An ad-free native Android infrared remote MVP for TVs and air conditioners, built with AI as a development partner. It uses your phone’s built-in IR blaster through Android’s public `ConsumerIrManager` API.
 
-**No ads, accounts, analytics, or internet permission.** Android 6.0 / API 23 or newer. The project is at version **1.3.0** and is licensed under [MIT](LICENSE).
+**No ads, accounts, analytics, or internet permission.** Android 6.0 / API 23 or newer. The project is at version **1.4.0** and is licensed under [MIT](LICENSE).
 
 <img src="docs/images/ac-remote.png" alt="Beam Remote AC controls in preview mode" width="280">
 <img src="docs/images/tv-remote.png" alt="Beam Remote TV controls in preview mode" width="280">
@@ -30,6 +30,7 @@ Built-in families are candidates requiring verification on your hardware. A user
 | LG AC | LG28 / 6711A20083V; LG2 / AKB75215403 | Power, 16–30°C, mode, fan |
 | Whirlpool AC | DG11J1-3A / 04 | 18–32°C, mode, fan, power toggle; experimental extras |
 | Whirlpool AC | DG11J1-91 | 16–30°C, mode, fan, power toggle; experimental extras |
+| Voltas AC | 183V DZU2 · protocol candidate | 17–30°C, Cool/Dry/Fan/Heat, fan, explicit On/Off, Swing, Sleep, Turbo toggle, Eco, Display toggle |
 | Other devices | Custom raw codes / complete AC scenes | User-supplied commands |
 
 **Whirlpool DG11J1-35 has a user report of partial/basic operation with the 3A/04 profile.** This is not full model certification; the new extra functions remain unverified on that hardware. Contributions with receiver captures and physical test results are welcome.
@@ -60,6 +61,7 @@ Windows: use `gradlew.bat`. A debug APK is for testing; production distribution 
 - LG TV NEC-address-04 candidate, including OK. A code family does not imply every model is supported.
 - LG AC LG28 / 6711A20083V and LG2 / AKB75215403 candidates: explicit off, on/apply, 16–30°C, mode and fan. A remote-shaped panel sends one complete-state command per button tap; desired settings persist.
 - Whirlpool AC DG11J1-3A/04 (18–32°C) and DG11J1-91 (16–30°C) candidates: Cool/Dry/Fan/Heat, Auto/Low/Medium/High fan, one-tap temperature, Mode and Fan buttons, and a transient Power toggle. Experimental basic 6th Sense/Auto, vertical swing, sleep and Turbo/Jet controls are included. Heat needs a heating-capable unit. Timers and model-specific advanced 6th Sense/sleep programs are not included.
+- Voltas AC 183V DZU2 protocol candidate: 17–30°C Cool/Dry/Fan/Heat, Auto/Low/Medium/High fan, explicit On/Off, Swing, Sleep, Turbo toggle, Eco and Display toggle. The source mapping was tested on 183V DZU2; an R32 refrigerant label alone does not identify a matching remote protocol. Timers and Follow Me are not exposed in this UI.
 - Custom TV buttons and custom AC **complete-state scenes** using raw microsecond patterns. This provides a practical path for other brands without pretending they share an AC protocol.
 - `ConsumerIrManager` transmission off the UI thread, carrier-range checks where the OEM reports them, validation below Android's two-second limit, error reporting, and dropped rapid taps rather than an unbounded command queue.
 - Preview mode automatically defaults on when there is no accessible emitter. Preview never transmits; transmission is never reported as appliance confirmation.
@@ -67,7 +69,7 @@ Windows: use `gradlew.bat`. A debug APK is for testing; production distribution 
 
 ## Coverage and limits
 
-This is an extensible MVP, **not an exhaustive universal code database**. Presets are protocol/code candidates and have not been verified on your appliances. TV and Whirlpool AC power are toggles; AC state is only the desired state, not telemetry. No automatic code scanning, learning, Bluetooth/RF/Wi-Fi control, macros, press-and-hold repetition, AC timers, or cloud database is included. LG swing is not implemented. The UI is English-only.
+This is an extensible MVP, **not an exhaustive universal code database**. Presets are protocol/code candidates and have not been verified on your appliances. TV and Whirlpool AC power are toggles; Voltas AC uses an explicit Off frame and a settings frame for On. AC state is only the desired state, not telemetry. No automatic code scanning, learning, Bluetooth/RF/Wi-Fi control, macros, press-and-hold repetition, AC timers, or cloud database is included. LG swing is not implemented. The UI is English-only.
 
 The phone model is not needed to build or browse the app: it probes Android's public IR API at runtime. A physical emitter hidden behind a vendor-only API will appear unavailable. If a command fails on real hardware, record the phone model, Android version, appliance model, and original remote model using the testing checklist.
 
@@ -79,7 +81,7 @@ If an import is interrupted by activity destruction while a slow document provid
 
 - `MainActivity.java`: native screens, profile editing and Android document picker.
 - `Profile.java`, `ProfileStore.java`, `Catalog.java`: schema validation, local persistence and candidate families.
-- `Signal.java`, `Encoders.java`, `WhirlpoolEncoder.java`: bounded raw signals and Samsung/NEC/LG/Whirlpool wire formats.
+- `Signal.java`, `Encoders.java`, `WhirlpoolEncoder.java`, `VoltasEncoder.java`: bounded raw signals and Samsung/NEC/LG/Whirlpool/Voltas wire formats.
 - `IrTransmitter.java`: public Android IR API adapter and serialized transmission.
 - `app/src/test/`: protocol vectors, boundary validation, and profile round-trip tests.
 - [Hardware and test checklist](docs/TESTING.md)

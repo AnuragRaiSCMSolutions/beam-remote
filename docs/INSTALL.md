@@ -32,6 +32,8 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 For a Whirlpool AC, turn the AC on with its original remote before testing a temperature change. In v1.2.0 each button sends immediately; no Apply step is needed. **Power on/off** is a toggle; send it once and observe before tapping again. Candidate families are DG11J1-3A/04 and DG11J1-91. A user has reported basic operation for DG11J1-35 using the 3A/04 profile; individual functions and new extras still need verification.
 
+For a Voltas AC, add **Voltas AC · 183V DZU2 · protocol candidate**. This profile implements a 38 kHz 183V DZU2 mapping. Check the full model suffix on your indoor unit or remote first: R32 identifies the refrigerant and does not guarantee this remote protocol. Try one command at a time in Preview, then test at short range with the AC in view. The mapping has not been confirmed on your exact R32 unit.
+
 For detailed device verification and troubleshooting, see [TESTING.md](TESTING.md). To add custom scenes or exchange profiles, see [PROFILE_FORMAT.md](PROFILE_FORMAT.md) and the JSON files in `examples/`.
 
 ## Add an offline profile library

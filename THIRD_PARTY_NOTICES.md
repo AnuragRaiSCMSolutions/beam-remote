@@ -16,6 +16,8 @@ JUnit 4.13.2 and JSON-java 20240303 are downloaded for local tests and are not p
 
 The Java encoders in this project were implemented independently. Research references and command provenance are listed in [PROTOCOLS.md](docs/PROTOCOLS.md), including Arduino-IRremote and IRremoteESP8266. Those projects retain their own licenses. No Arduino/ESP8266 library or third-party universal remote database is bundled.
 
+The Voltas 183V DZU2 encoder is an independent implementation of the documented protocol in [nicx17/Voltas-183V-DZU2-IR-CODES](https://github.com/nicx17/Voltas-183V-DZU2-IR-CODES), a project published under MIT. Its captured-code database and implementation source are not included in this APK.
+
 Brand and model names identify protocol candidates and compatibility research. This project is not affiliated with or endorsed by Samsung, LG, Whirlpool, Xiaomi, Google, or Gradle.
 
 ## Optional profile data

@@ -320,7 +320,7 @@ public final class MainActivity extends Activity {
         TextView caption = text(lcd, "REMOTE SETTINGS · NOT LIVE STATUS", 10, MUTED); caption.setGravity(Gravity.CENTER);
         TextView temp = text(lcd, p.temperature + "°C", 58, INK);
         temp.setGravity(Gravity.CENTER); temp.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        String[] modeNames = {"Cool", "Dry", "Fan", p.isWhirlpool() ? "6th Sense" : "Auto", "Heat"};
+        String[] modeNames = {"Cool", "Dry", "Fan", p.isWhirlpool() ? "6th Sense" : p.isVoltas() ? "—" : "Auto", "Heat"};
         String fanName = p.fan == 5 ? "Auto" : p.fan == 4 ? "High" : p.fan == 2 ? "Medium" : p.fan == 1 ? "Low" : "Lowest";
         TextView summary = text(lcd, modeNames[p.mode] + "   ·   Fan " + fanName, 16, INK); summary.setGravity(Gravity.CENTER);
         if (p.isWhirlpool()) {
@@ -341,23 +341,25 @@ public final class MainActivity extends Activity {
         Button minus = button(temperatures, "−  TEMP", false, () -> acTap(panel, p, () -> { p.temperature--; p.acCommand = 2; p.turbo = false; }, !p.isWhirlpool()));
         Button plus = button(temperatures, "TEMP  +", false, () -> acTap(panel, p, () -> { p.temperature++; p.acCommand = 2; p.turbo = false; }, !p.isWhirlpool()));
         minus.setContentDescription("Temperature down one degree"); plus.setContentDescription("Temperature up one degree");
-        minus.setEnabled(p.temperature > p.minTemperature() && !(p.isWhirlpool() && p.mode == 3));
-        plus.setEnabled(p.temperature < p.maxTemperature() && !(p.isWhirlpool() && p.mode == 3));
+        boolean temperatureControl = !(p.isWhirlpool() && p.mode == 3) && !(p.isVoltas() && p.mode == 2);
+        minus.setEnabled(temperatureControl && p.temperature > p.minTemperature());
+        plus.setEnabled(temperatureControl && p.temperature < p.maxTemperature());
         LinearLayout basics = row(panel);
         button(basics, "Mode", false, () -> acTap(panel, p, () -> {
-            int[] modes = p.isWhirlpool() ? new int[]{0,1,2,4} : new int[]{0,1,2,3,4};
+            int[] modes = p.isWhirlpool() || p.isVoltas() ? new int[]{0,1,2,4} : new int[]{0,1,2,3,4};
             int next = modes[0];
             for (int i=0;i<modes.length;i++) if (modes[i] == p.mode) next = modes[(i+1)%modes.length];
             if (p.isWhirlpool()) p.whirlpoolMode(next); else { p.mode = next; p.acCommand = 6; }
+            if (p.isVoltas() && next == 1) p.fan = 5;
         }, !p.isWhirlpool()));
         Button fan = button(basics, "Fan speed", false, () -> acTap(panel, p, () -> {
-            int[] speeds = p.isWhirlpool() ? new int[]{5,1,2,4} : new int[]{5,0,1,2,4};
+            int[] speeds = p.isWhirlpool() || p.isVoltas() ? new int[]{5,1,2,4} : new int[]{5,0,1,2,4};
             int next = speeds[0];
             for (int i=0;i<speeds.length;i++) if (speeds[i] == p.fan) next = speeds[(i+1)%speeds.length];
             p.fan = next; p.acCommand = 17; p.turbo = false;
             if (p.isWhirlpool() && p.fan != 1) p.sleep = false;
         }, !p.isWhirlpool()));
-        fan.setEnabled(!(p.isWhirlpool() && p.mode == 3));
+        fan.setEnabled(!(p.isWhirlpool() && p.mode == 3) && !(p.isVoltas() && p.mode == 1));
         if (p.isWhirlpool()) {
             LinearLayout extras = row(panel);
             button(extras, "6th Sense", p.mode == 3, () -> acTap(panel, p, () -> p.whirlpoolMode(3), false));
@@ -365,6 +367,25 @@ public final class MainActivity extends Activity {
             LinearLayout comfort = row(panel);
             button(comfort, p.sleep ? "Sleep · ON" : "Sleep", p.sleep, () -> acTap(panel, p, () -> p.whirlpoolSleep(!p.sleep), false));
             button(comfort, p.turbo ? "Turbo · ON" : "Turbo", p.turbo, () -> acTap(panel, p, () -> p.whirlpoolTurbo(!p.turbo), false));
+        }
+        if (p.isVoltas()) {
+            LinearLayout features = row(panel);
+            button(features, p.swing ? "Swing · ON" : "Swing", p.swing, () -> {
+                boolean next = !p.swing;
+                voltasTap(panel, p, () -> p.swing = next, VoltasEncoder.swing(next));
+            });
+            button(features, p.sleep ? "Sleep · ON" : "Sleep", p.sleep, () -> {
+                boolean next = !p.sleep;
+                voltasTap(panel, p, () -> p.sleep = next, VoltasEncoder.sleep(next, p.temperature));
+            });
+            LinearLayout options = row(panel);
+            button(options, "Turbo toggle", false, () -> voltasTap(panel, p, () -> {}, VoltasEncoder.turboToggle()));
+            button(options, p.eco ? "Eco · ON" : "Eco", p.eco, () -> {
+                boolean next = !p.eco;
+                voltasTap(panel, p, () -> p.eco = next, VoltasEncoder.eco(next));
+            });
+            button(options, "Display toggle", false, () -> voltasTap(panel, p, () -> {}, VoltasEncoder.displayToggle()));
+            text(panel, "Voltas 183V DZU2 protocol candidate · 17–30°C · 38 kHz. Your exact R32 model may use different codes. Turbo and display send toggle commands; appliance state cannot be confirmed over IR.", 12, MUTED);
         }
         text(panel, preview ? "Each tap previews one command. Nothing is transmitted." : "Each tap sends one command. Point the phone at the AC.", 13, MUTED);
         if (p.isWhirlpool() && p.mode == 3) text(panel, "Basic 6th Sense uses 23°C / Auto fan. Press Mode for manual controls.", 13, MUTED);
@@ -375,6 +396,12 @@ public final class MainActivity extends Activity {
         change.run(); persist(profiles);
         panel.removeAllViews(); acControls(panel, p);
         send(p.acSignal(powerAction));
+    }
+    private void voltasTap(LinearLayout panel, Profile p, Runnable change, Signal signal) {
+        if (transmitter.isBusy()) { status.setText("Please wait for the previous signal."); return; }
+        change.run(); persist(profiles);
+        panel.removeAllViews(); acControls(panel, p);
+        send(signal);
     }
     private interface Selection { void choose(int index); }
     private AdapterView.OnItemSelectedListener listener(Selection selected) {
@@ -397,7 +424,7 @@ public final class MainActivity extends Activity {
         LinearLayout tips = card(); title(tips, "Start here", 22);
         text(tips, "1. Add a device and pick its remote code family. A remote model is often printed inside its battery cover.\n\n2. Point your phone’s IR window at the appliance. Start close, with clear line of sight.\n\n3. Try one command. If it does not work, select a different profile or import verified codes.\n\n4. Rename a working profile for its room.", 16, MUTED);
         LinearLayout limits = card(); title(limits, "What to expect", 22);
-        text(limits, "A built-in IR emitter must be exposed through Android’s ConsumerIrManager. Some phones require unsupported vendor APIs. An emulator cannot emit IR.\n\nIR is one-way: “sent” does not mean the appliance responded. Power toggles may become out of sync.\n\nAC protocols vary by model. LG presets cover basic power, temperature, mode and fan; swing, timers and special features are not included. Whirlpool presets include basic settings, a power toggle, and experimental basic 6th Sense, vertical swing, sleep and Turbo for DG11J1 remote families. For other models or advanced functions, import complete raw state scenes.\n\nYour phone cannot learn a remote through this API. Capturing codes requires a separate IR receiver. Bluetooth, RF and Wi-Fi remotes are not supported.\n\nProfiles stay on this phone. No account, network permission, or analytics.", 16, MUTED);
+        text(limits, "A built-in IR emitter must be exposed through Android’s ConsumerIrManager. Some phones require unsupported vendor APIs. An emulator cannot emit IR.\n\nIR is one-way: “sent” does not mean the appliance responded. Power toggles may become out of sync.\n\nAC protocols vary by model. LG presets cover basic power, temperature, mode and fan. Whirlpool presets include basic settings, a power toggle, and experimental basic 6th Sense, vertical swing, sleep and Turbo for DG11J1 remote families. Voltas includes a 183V DZU2 protocol candidate with basic settings and documented extras; R32 alone does not confirm compatibility. For other models or unsupported functions, import complete raw state scenes.\n\nYour phone cannot learn a remote through this API. Capturing codes requires a separate IR receiver. Bluetooth, RF and Wi-Fi remotes are not supported.\n\nProfiles stay on this phone. No account, network permission, or analytics.", 16, MUTED);
     }
     private LinearLayout form() { LinearLayout form = column(); form.setPadding(dp(22), dp(8), dp(22), dp(12)); return form; }
     private EditText field(LinearLayout form, String label, String initial) {

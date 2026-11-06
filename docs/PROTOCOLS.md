@@ -9,6 +9,7 @@ These encoders were written for this project. No Arduino or ESP8266 library is l
 | LG28 AC | 38 kHz; 8.5 ms / 4.25 ms header; 28 bits MSB first | Basic LG 6711A20083V-style state |
 | LG2 AC | 38 kHz; 3.2 ms / 9.9 ms header; 480 µs marks; 28 bits MSB first | Basic AKB75215403-style state |
 | Whirlpool AC | 38 kHz; 21 bytes, LSB first; sections of 6/8/7 bytes with two inter-section gaps | DG11J1-3A/04 and DG11J1-91 basic-state candidates |
+| Voltas AC | 38 kHz; 48-bit NEC-extended variant; two frames, LSB-first bytes | Voltas 183V DZU2 protocol candidate |
 | Raw | Explicit carrier + alternating positive mark/space microseconds | Any complete captured signal within API bounds |
 
 Samsung command values are documented by the [Arduino-IRremote Samsung example](https://github.com/Arduino-IRremote/Arduino-IRremote/blob/master/examples/ReceiveOneAndSendMultiple/ReceiveOneAndSendMultiple.ino). Its [Samsung protocol implementation](https://github.com/Arduino-IRremote/Arduino-IRremote/blob/master/src/ir_Samsung.hpp) describes bit order and timings.
@@ -38,3 +39,11 @@ Power is a one-shot toggle bit, never a saved desired on/off state. Other button
 Basic 6th Sense uses wire Auto mode 1, 23°C, Auto fan and no sleep/Turbo. Sleep sets byte 2 bit 3 and low fan. Vertical swing uses both byte 2 bit 7 and byte 8 bit 6. Turbo uses byte 5 bits 4 and 7, high fan and minimum cooling/maximum heating temperature. Power clears Turbo. Frames retain both XOR checksums and model offsets. Timers are disabled, clock is 00:00, and the default display-light flag is unchanged.
 
 DG11J1-3A/04 spans 18–32°C; DG11J1-91 spans 16–30°C. Heat requires heating hardware. These new controls follow documented candidate-family fields; they have not been confirmed on DG11J1-35. Upstream also distinguishes basic Auto/sleep from unsupported advanced 6th Sense and sleep programs. No iFeel, AroundU, Silent, PowerSave or proprietary sensor programs are implemented. Each button sends one complete frame; no automatic repeat or retry is added.
+
+## Voltas 183V DZU2 candidate
+
+Reference: [Voltas 183V DZU2 protocol analysis and captured-code project](https://github.com/nicx17/Voltas-183V-DZU2-IR-CODES), whose author reports testing on the 183V DZU2 and publishes the project under MIT. This Java encoder was written independently from the documented protocol; the repository's raw capture database and its code are not bundled.
+
+The protocol uses two repeated 48-bit frames at 38 kHz: a 4,450 µs mark/space header, 530 µs data marks, 530 µs zero spaces, 1,650 µs one spaces, a 5,200 µs inter-frame space and a trailing mark. Bytes are transmitted LSB first. Standard state frames use address `B2 4D`; B3 complements B2 and B5 usually complements B4. Temperature uses the published 17–30°C lookup table, fan codes are High `3F`, Medium `5F`, Low `9F`, Auto `BF`; mode nibbles are Cool `0`, Dry `4`, Heat `C`, and Fan-only uses data byte `E4`. Dry forces Auto fan. The encoder emits explicit Off (`B2=7B`, data `E0`) or a complete On/settings frame.
+
+Implemented extras follow the published values for Swing on/off, Sleep on/off, Turbo toggle, Eco on/off and Display toggle. Timer, Follow Me and dehumidify commands are not exposed. The profile is specifically labeled 183V DZU2; refrigerant type R32 alone does not establish compatibility with another Voltas model. Physical confirmation is still required.

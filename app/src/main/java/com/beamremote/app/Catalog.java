@@ -5,12 +5,13 @@ public final class Catalog {
         "Samsung TV · BN59-01180A family", "LG TV · NEC address 04 (candidate)",
         "LG AC · 6711A20083V / LG28", "LG AC · AKB75215403 / LG2",
         "Other TV · custom codes", "Other AC · custom scenes",
-        "Whirlpool AC · DG11J1-3A / 04 · 18–32°C", "Whirlpool AC · DG11J1-91 · 16–30°C"
+        "Whirlpool AC · DG11J1-3A / 04 · 18–32°C", "Whirlpool AC · DG11J1-91 · 16–30°C",
+        "Voltas AC · 183V DZU2 · protocol candidate · 17–30°C"
     };
     public static Profile create(int choice, String name) {
         Profile p = new Profile(); p.name = name;
-        p.kind = choice == 2 || choice == 3 || choice == 5 ? "AC" : "TV";
-        p.brand = choice == 0 ? "Samsung" : choice < 4 ? "LG" : "Custom";
+        p.kind = choice == 2 || choice == 3 || choice == 5 || choice == 8 ? "AC" : "TV";
+        p.brand = choice == 0 ? "Samsung" : choice < 4 ? "LG" : choice == 8 ? "Voltas" : "Custom";
         p.model = choice == 0 ? "BN59-01180A family" : choice == 1 ? "NEC address 04 candidate" :
             choice == 2 ? "6711A20083V" : choice == 3 ? "AKB75215403" : "Unspecified";
         p.protocol = choice == 2 ? "LG28" : choice == 3 ? "LG2" : "RAW";
@@ -18,6 +19,9 @@ public final class Catalog {
             p.kind = "AC"; p.brand = "Whirlpool";
             p.model = choice == 6 ? "DG11J1-3A / DG11J1-04" : "DG11J1-91";
             p.protocol = choice == 6 ? "WHIRLPOOL3A" : "WHIRLPOOL91";
+        }
+        if (choice == 8) {
+            p.kind = "AC"; p.brand = "Voltas"; p.model = "183V DZU2 · protocol candidate"; p.protocol = "VOLTAS183V";
         }
         if (choice < 2) {
             String[] labels = {"Power", "Volume +", "Volume −", "Mute", "Channel +", "Channel −", "Input", "Up", "Down", "Left", "Right", "Back", "Menu"};
